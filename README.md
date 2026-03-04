@@ -50,21 +50,28 @@ src/
 
 ## How It Works
 
-### 1. Yield Fetching
+### 1. Dynamic Chain Discovery (LI.FI SDK)
+```typescript
+// Dynamically fetches all supported chains from LI.FI
+const chains = await fetchSupportedChains();
+// Returns: [{ id: 1, name: 'Ethereum' }, { id: 42161, name: 'Arbitrum' }, ...]
+```
+
+### 2. Yield Fetching
 ```typescript
 // Fetches live USDC yields from AaveScan
 const yields = await fetchYields();
 // Returns: { 42161: { chainName: 'Arbitrum', supplyApr: 4.2%, ... } }
 ```
 
-### 2. Decision Making
+### 3. Decision Making
 ```typescript
 // Finds best yield opportunity
 const decision = findBestYield(yields, currentChainId);
 // Returns: { shouldRebalance: true, fromChain: 42161, toChain: 8453, ... }
 ```
 
-### 3. Cross-Chain Bridge
+### 4. Cross-Chain Bridge
 ```typescript
 // Gets LI.FI quote for bridging
 const quote = await getBridgeQuote({
@@ -136,26 +143,7 @@ LI.FI doesn't support testnets (bridges have no liquidity). For testing:
 2. Use **low-gas chains** (Arbitrum, Base, Optimism)
 3. Or just demo the **quote/decision flow** without executing
 
-## Hackathon Submission
 
-### Video Requirements
-- Show what the agent does
-- Explain how it makes decisions  
-- Demonstrate LI.FI integration
-- Keep it simple (UGC style)
-
-### Post Requirements
-- Tag @lifiprotocol
-- Include "I just built this x agent with LI.FI's API for Agentic Commerce"
-- Post by March 9th
-
-## Future Improvements
-
-- [ ] Add wallet connection for real execution
-- [ ] Integrate with Aave for actual deposit after bridging
-- [ ] Add auto-rebalance on schedule
-- [ ] Support more tokens (USDT, DAI, etc.)
-- [ ] Add Telegram/Discord alerts
 
 ## License
 

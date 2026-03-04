@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { YieldAgent, AgentDecision } from "@/lib/agent";
-import { getChainName } from "@/lib/lifi";
 
 const WALLET_ADDRESS = "0x742d35Cc6634C0532925a3b844Bc9e7595f0fAb1";
 
@@ -100,12 +99,12 @@ export default function Home() {
                 <p className="text-slate-300">{decision.message}</p>
               </div>
 
-              {decision.recommendation.action === "REBALANCE" && (
+              {decision.recommendation.action === "REBALANCE" && decision.recommendation.fromChain && decision.recommendation.toChain && (
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-slate-900/50 p-4 rounded-xl">
                     <div className="text-slate-400 text-sm">From</div>
                     <div className="text-lg font-semibold">
-                      {getChainName(decision.recommendation.fromChain!)}
+                      {decision.yields[decision.recommendation.fromChain]?.chainName || `Chain ${decision.recommendation.fromChain}`}
                     </div>
                     <div className="text-cyan-400">
                       {decision.recommendation.fromYield?.toFixed(2)}% APY
@@ -114,7 +113,7 @@ export default function Home() {
                   <div className="bg-slate-900/50 p-4 rounded-xl">
                     <div className="text-slate-400 text-sm">To</div>
                     <div className="text-lg font-semibold">
-                      {getChainName(decision.recommendation.toChain!)}
+                      {decision.yields[decision.recommendation.toChain]?.chainName || `Chain ${decision.recommendation.toChain}`}
                     </div>
                     <div className="text-green-400">
                       {decision.recommendation.toYield?.toFixed(2)}% APY

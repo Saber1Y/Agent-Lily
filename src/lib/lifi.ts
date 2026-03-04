@@ -1,17 +1,4 @@
-import { getQuote, createConfig, executeRoute, convertQuoteToRoute } from '@lifi/sdk';
-import { createWalletClient, http, parseEther } from 'viem';
-import { arbitrum, base, optimism } from 'viem/chains';
-
-export const CHAIN_IDS: { [key: number]: string } = {
-  1: 'ethereum',
-  10: 'optimism',
-  42161: 'arbitrum',
-  8453: 'base',
-  137: 'polygon',
-  56: ' BSC',
-  43114: 'avalanche',
-  1151111081099710: 'solana'
-};
+import { getQuote, createConfig, executeRoute, getChains, getToken, getTokens } from '@lifi/sdk';
 
 export const USDC_ADDRESSES: { [chainId: number]: string } = {
   42161: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
@@ -21,7 +8,29 @@ export const USDC_ADDRESSES: { [chainId: number]: string } = {
   137: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
 };
 
-const SUPPORTED_CHAINS = [42161, 8453, 10];
+let cachedChains: any[] | null = null;
+
+export async function fetchSupportedChains() {
+  if (cachedChains) return cachedChains;
+  
+  createConfig({
+    integrator: 'lifi-yield-agent',
+  });
+  
+  const chains = await getChains();
+  cachedChains = chains;
+  return chains;
+}
+
+export async function fetchChainById(chainId: number) {
+  const chains = await fetchSupportedChains();
+  return chains.find((c: any) => c.id === chainId);
+}
+
+export async function fetchChainByName(name: string) {
+  const chains = await fetchSupportedChains();
+  return chains.find((c: any) => c.name.toLowerCase() === name.toLowerCase());
+}
 
 export async function getCrossChainQuote(params: {
   fromChain: number;
@@ -78,10 +87,48 @@ export async function getBridgeQuote(params: {
   return quote;
 }
 
-export function getSupportedChains() {
-  return SUPPORTED_CHAINS;
+export async function getSupportedChains() {
+  const chains = await fetchSupportedChains();
+  return chains.filter((c: any) => c.id in USDC_ADDRESSES).map((c: any) => c.id);
 }
 
-export function getChainName(chainId: number): string {
-  return CHAIN_IDS[chainId] || `Chain ${chainId}`;
+const CHAIN_NAMES_FALLBACK: { [id: number]: string } = {
+  1: 'Ethereum',
+  10: 'Optimism',
+  42161: 'Arbitrum One',
+  8453: 'Base',
+  137: 'Polygon',
+  56: 'BNB Chain',
+  43114: 'Avalanche C-Chain',
+};
+
+let chainNamesCache: { [id: number]: string } = {};
+
+export async function getChainName(chainId: number): Promise<string> {
+  if (chainNamesCache[chainId]) {
+    return chainNamesCache[chainId];
+  }
+  
+  try {
+    const chain = await fetchChainById(chainId);
+    if (chain?.name) {
+      chainNamesCache[chainId] = chain.name;
+      return chain.name;
+    }
+  } catch (e) {
+    console.log('Using fallback chain name');
+  }
+  
+  return CHAIN_NAMES_FALLBACK[chainId] || `Chain ${chainId}`;
+}
+
+export async function getAllChainNames(): Promise<{ [id: number]: string }> {
+  const chains = await fetchSupportedChains();
+  const result: { [id: number]: string } = {};
+  for (const chain of chains) {
+    if (chain.id in USDC_ADDRESSES) {
+      result[chain.id] = chain.name;
+    }
+  }
+  return result;
 }

@@ -55,7 +55,8 @@ export class YieldAgent {
       const bestYield = findBestYield(yields, this.currentChain);
 
       if (bestYield && bestYield.shouldRebalance) {
-        decision.message = `Arbitrum: ${bestYield.fromYield.toFixed(2)}% → ${getChainName(bestYield.toChain)}: ${bestYield.toYield.toFixed(2)}% (${bestYield.difference.toFixed(2)}% higher)`;
+        const toChainName = await getChainName(bestYield.toChain);
+        decision.message = `Arbitrum: ${bestYield.fromYield.toFixed(2)}% → ${toChainName}: ${bestYield.toYield.toFixed(2)}% (${bestYield.difference.toFixed(2)}% higher)`;
         
         const quote = await getBridgeQuote({
           fromChainId: bestYield.fromChain,
@@ -76,8 +77,9 @@ export class YieldAgent {
         decision.status = 'ready';
       } else {
         const currentYield = yields[this.currentChain];
+        const currentChainName = await getChainName(this.currentChain);
         decision.message = currentYield 
-          ? `${getChainName(this.currentChain)} has the best yield at ${currentYield.supplyApr.toFixed(2)}%`
+          ? `${currentChainName} has the best yield at ${currentYield.supplyApr.toFixed(2)}%`
           : 'Current chain has best or unknown yield';
         decision.status = 'idle';
       }
