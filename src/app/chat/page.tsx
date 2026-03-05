@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { HiOutlineMenu } from "react-icons/hi";
 import { Sidebar } from "@/components/Sidebar";
+import { getFormattedBridgeQuote, getChainsInfo } from "@/lib/lifi";
+import { fetchAaveYields } from "@/lib/aaveDirect";
+import { getChainName } from "@/lib/lifi";
 
 const ConnectWallet = dynamic(
   () =>
@@ -131,90 +134,62 @@ export default function ChatPage() {
     setInput("");
     setIsLoading(true);
 
-    setTimeout(() => {
-      const responses: { [key: string]: string } = {
-        yields: `📊 Current USDC Yields:
-
-• Solana (Kamino): 8.2% APY 🟢 Highest
-• Base (Aave): 4.5% APY
-• Arbitrum (Aave): 4.1% APY
-• Optimism (Aave): 4.0% APY
-• Polygon (Aave): 3.8% APY
-• Avalanche (Aave): 3.6% APY
-• Ethereum (Aave): 3.5% APY
-• BNB Chain (Aave): 3.2% APY
-
-Would you like me to check if rebalancing makes sense?`,
-        rebalance: `🔄 Rebalance Analysis:
-
-Current: Arbitrum (4.1% APY)
-Best: Solana (8.2% APY)
-Difference: +4.1% APY
-
-LI.FI Bridge Quote (1000 USDC):
-• Estimated time: ~3 minutes
-• Fee: ~$2.50
-• Route: Stargate
-
-Shall I proceed with the bridge?`,
-        bridge: `🌉 LI.FI Bridge Quote:
-
-From: Arbitrum (42161)
-To: Solana (1151111081099710)
-Amount: 1000 USDC
-
-Options:
-1. Stargate - ~3 min - $2.50 fee
-2. Across - ~7 min - $1.80 fee
-3. Hop - ~5 min - $2.20 fee
-
-Which route would you prefer?`,
-        default: `I can help you with:
+    let response = "";
+    const lowerInput = input.toLowerCase();
+    
+    if (lowerInput.includes("chains") || lowerInput.includes("supported")) {
+      response = await getChainsInfo();
+    } else if (lowerInput.includes("aave") || lowerInput.includes("direct") || lowerInput.includes("yield") || lowerInput.includes("apy")) {
+      // Test direct contract call
+      const yields = await fetchAaveYields();
+      if (yields.length > 0) {
+        const sorted = yields.sort((a, b) => b.supplyRate - a.supplyRate);
+        response = "📊 Aave USDC Yields (via direct contract call):\n\n";
+        sorted.forEach((y, i) => {
+          response += `${i === 0 ? "🟢" : "•"} ${y.chainName}: ${y.supplyRate.toFixed(2)}% APY${i === 0 ? " (Highest)" : ""}\n`;
+        });
+      } else {
+        response = "⚠️ Could not fetch yields from any chain. Check console for errors.";
+      }
+    } else if (lowerInput.includes("rebalance")) {
+      response = "⚠️ Rebalance requires AaveScan API key first.";
+    } else if (lowerInput.includes("bridge") || lowerInput.includes("swap")) {
+      response = "⚠️ Bridge quotes require LI.FI API key or valid wallet address.";
+    } else {
+      response = `I can help you with:
 
 • "check yields" - View current APY across all chains
 • "rebalance" - Analyze if moving funds makes sense
 • "bridge [amount] to [chain]" - Get a bridge quote
 • "help" - Show all commands
 
-What would you like to do?`,
-      };
+What would you like to do?`;
+    }
 
-      const lowerInput = input.toLowerCase();
-      let response = responses.default;
+    const assistantMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: response,
+      timestamp: Date.now(),
+    };
 
-      if (lowerInput.includes("yield") || lowerInput.includes("apy")) {
-        response = responses.yields;
-      } else if (lowerInput.includes("rebalance")) {
-        response = responses.rebalance;
-      } else if (lowerInput.includes("bridge") || lowerInput.includes("swap")) {
-        response = responses.bridge;
-      }
+    const updatedMessages = [...newMessages, assistantMessage];
+    setMessages(updatedMessages);
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response,
-        timestamp: Date.now(),
-      };
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.id === activeChatId
+          ? {
+              ...chat,
+              messages: updatedMessages,
+              title: input.slice(0, 30) + "...",
+              timestamp: Date.now(),
+            }
+          : chat,
+      ),
+    );
 
-      const updatedMessages = [...newMessages, assistantMessage];
-      setMessages(updatedMessages);
-
-      setChats((prev) =>
-        prev.map((chat) =>
-          chat.id === activeChatId
-            ? {
-                ...chat,
-                messages: updatedMessages,
-                title: input.slice(0, 30) + "...",
-                timestamp: Date.now(),
-              }
-            : chat,
-        ),
-      );
-
-      setIsLoading(false);
-    }, 1000);
+    setIsLoading(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -330,6 +305,8 @@ What would you like to do?`,
           </div>
         </main>
 
+  
+      
         {/* Input Area */}
         <footer className="bg-[#12121A] border-t border-[#2A2A35] px-6 py-4">
           <div className="max-w-4xl mx-auto">
