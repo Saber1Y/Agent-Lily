@@ -55,7 +55,7 @@ export default function ChatPage() {
       id: "1",
       title: "Yield Analysis",
       messages: initialMessage,
-      timestamp: 0,
+      timestamp: Date.now(),
     },
   ]);
   const [activeChatId, setActiveChatId] = useState("1");

@@ -95,7 +95,7 @@ export function Sidebar({
                       {chat.title}
                     </div>
                     <div className="text-xs text-[#606070] mt-1">
-                      {new Date(chat.timestamp).toLocaleDateString()}
+                      {String(new Date(chat.timestamp).getMonth() + 1).padStart(2, '0')}/{String(new Date(chat.timestamp).getDate()).padStart(2, '0')}/{new Date(chat.timestamp).getFullYear()}
                     </div>
                   </button>
                   <button
