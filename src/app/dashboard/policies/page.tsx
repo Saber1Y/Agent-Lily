@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
+
 import { DashboardShell } from "@/components/DashboardShell";
 import {
   ActionButton,
@@ -11,6 +14,43 @@ import { useAgentOps } from "@/components/dashboard/useAgentOps";
 export default function DashboardPoliciesPage() {
   const { opsSecret, setOpsSecret, opsConfig, setOpsConfig, saveConfig, isLoading } =
     useAgentOps();
+  const [cliToken, setCliToken] = useState<string | null>(null);
+  const [cliTokenExpiry, setCliTokenExpiry] = useState<string | null>(null);
+
+  async function generateCliToken() {
+    if (!opsSecret.trim()) {
+      toast.error("Enter agent admin token first.");
+      return;
+    }
+
+    const response = await fetch("/api/agent/cli-token", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${opsSecret}`,
+      },
+    });
+    const json = await response.json();
+
+    if (!response.ok) {
+      toast.error("Failed to generate CLI token.", {
+        description: json.message || "Unknown error occurred.",
+      });
+      return;
+    }
+
+    setCliToken(json.token);
+    setCliTokenExpiry(json.expiresAt);
+    try {
+      await navigator.clipboard.writeText(`lily auth token ${json.token}`);
+      toast.success("CLI token copied.", {
+        description: "Paste it into your terminal to authenticate Lily CLI.",
+      });
+    } catch {
+      toast.success("CLI token generated.", {
+        description: "Copy the auth command shown below into your terminal.",
+      });
+    }
+  }
 
   return (
     <DashboardShell
@@ -115,6 +155,36 @@ export default function DashboardPoliciesPage() {
           Enable autonomous execution
         </label>
       </SectionCard>
+
+      <div className="mt-6">
+        <SectionCard
+          title="CLI Access"
+          subtitle="Generate a dedicated Lily CLI token. This is separate from the raw admin secret."
+          aside={
+            <ActionButton onClick={generateCliToken} disabled={isLoading}>
+              Generate CLI Token
+            </ActionButton>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-[#8F90A6]">
+              Install Lily CLI, then run the copied command to save the token locally.
+            </p>
+            <TextField
+              label="CLI Auth Command"
+              value={cliToken ? `lily auth token ${cliToken}` : ""}
+              onChange={() => {}}
+              placeholder="Generate a CLI token to see the auth command."
+              readOnly
+            />
+            <div className="text-xs text-[#707083]">
+              {cliTokenExpiry
+                ? `Token expires at ${new Date(cliTokenExpiry).toLocaleString()}.`
+                : "Generated CLI tokens expire automatically."}
+            </div>
+          </div>
+        </SectionCard>
+      </div>
     </DashboardShell>
   );
 }

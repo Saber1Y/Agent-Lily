@@ -1,6 +1,6 @@
-# LI.FI Yield Rebalancing Agent
+# Agent Lily
 
-An autonomous AI agent that monitors USDC lending yields across chains via AaveScan API and automatically uses LI.FI to bridge funds from lower-yield chains to higher-yield chains.
+Agent Lily is a cross-chain yield strategist that monitors USDC lending yields across chains and uses LI.FI to route capital toward better opportunities.
 
 ## The Problem
 
@@ -11,7 +11,7 @@ An autonomous AI agent that monitors USDC lending yields across chains via AaveS
 ## The Solution
 
 This AI agent:
-1. Fetches live USDC supply APR from AaveScan API across 7+ chains
+1. Fetches live USDC supply APR across supported chains
 2. Compares yields and finds the best opportunity
 3. Uses LI.FI SDK to get cross-chain bridge quotes
 4. Recommends (and can execute) rebalancing to maximize yield
@@ -20,7 +20,7 @@ This AI agent:
 
 - **Next.js 16** - React framework
 - **LI.FI SDK** - Cross-chain swaps and bridging
-- **AaveScan API** - Real-time yield data
+- **Aave + on-chain reads** - Real-time yield data
 - **Viem** - Ethereum interaction
 - **Tailwind CSS** - Styling
 
@@ -38,25 +38,54 @@ Open [http://localhost:3000](http://localhost:3000) to view the agent.
 
 ## Agent Lily CLI
 
-The repo also includes a non-wallet operator CLI for read and control tasks:
+The repo includes a non-wallet operator CLI for read, reporting, and admin tasks.
+
+### Install / run locally
 
 ```bash
-# Local usage
 npm run cli -- help
+```
+
+By default, the CLI uses:
+
+- base URL: `http://127.0.0.1:3000`
+- config file: `~/.lily/config.json`
+
+### Authenticate from the dashboard
+
+The intended flow is:
+
+1. Open `/dashboard/policies`
+2. Enter your admin token
+3. Click `Generate CLI Token`
+4. Copy the generated command:
+
+```bash
+lily auth token <TOKEN>
+```
+
+This stores a dedicated Lily CLI token locally. It is separate from the raw admin secret.
+
+### Auth commands
+
+```bash
+npm run cli -- auth status
+npm run cli -- auth token <TOKEN>
+npm run cli -- auth logout
+```
+
+### Common commands
+
+```bash
 npm run cli -- status
 npm run cli -- yields
 npm run cli -- report
 npm run cli -- runs --limit 5
 npm run cli -- config get
 npm run cli -- run
-
-# Use with a deployed app
-LILY_BASE_URL=https://your-app.vercel.app \
-LILY_AGENT_TOKEN=your_agent_secret \
-npm run cli -- status
 ```
 
-Config updates can be made without a wallet:
+### Config updates
 
 ```bash
 npm run cli -- config set \
@@ -67,13 +96,29 @@ npm run cli -- config set \
   --telegram-enabled true
 ```
 
+### Use with a deployed app
+
+If you want the CLI to target a deployed Lily instance, save the token with the deployed base URL:
+
+```bash
+npm run cli -- auth token <TOKEN> --base-url https://your-app.vercel.app
+```
+
+You can still override at runtime with env vars:
+
+```bash
+LILY_BASE_URL=https://your-app.vercel.app \
+LILY_AGENT_TOKEN=<TOKEN> \
+npm run cli -- status
+```
+
 ## Project Structure
 
 ```
 src/
 ├── lib/
 │   ├── agent.ts      # Main agent logic
-│   ├── yields.ts     # AaveScan API integration
+│   ├── yields.ts     # Yield aggregation
 │   └── lifi.ts       # LI.FI SDK integration
 └── app/
     └── page.tsx      # Demo UI
@@ -90,7 +135,7 @@ const chains = await fetchSupportedChains();
 
 ### 2. Yield Fetching
 ```typescript
-// Fetches live USDC yields from AaveScan
+// Fetches live USDC yields
 const yields = await fetchYields();
 // Returns: { 42161: { chainName: 'Arbitrum', supplyApr: 4.2%, ... } }
 ```
@@ -125,7 +170,7 @@ const quote = await getBridgeQuote({
 
 ## LI.FI Integration Methods (Required by Hackathon)
 
-This project implements ALL required LI.FI integrations:
+This project uses LI.FI in production code and includes optional LI.FI tooling for the development workflow:
 
 ### 1. LI.FI SDK ✅ (Primary)
 Used in `src/lib/lifi.ts` for cross-chain bridging:
@@ -134,7 +179,7 @@ import { getQuote, createConfig, executeRoute } from '@lifi/sdk';
 ```
 
 ### 2. LI.FI MCP Server ✅
-For AI coding assistants (Claude, Cursor, Windsurf). Already configured in `mcp.json`:
+Configured for AI coding assistants in `mcp.json`:
 ```json
 {
   "mcpServers": {
@@ -149,15 +194,15 @@ For AI coding assistants (Claude, Cursor, Windsurf). Already configured in `mcp.
 To use: Add this config to your AI assistant's MCP settings.
 
 ### 3. LI.FI Agent Skills ✅
-Install into Claude, Cursor, Codex, or other AI assistants:
+Can be installed into Claude, Cursor, Codex, or other AI assistants:
 ```bash
 npx skills add https://github.com/lifinance/lifi-agent-skills --skill li-fi-sdk
 ```
 
 This gives the AI assistant knowledge about LI.FI SDK functions.
 
-### 4. OpenClaw Plugin ❌ (Not Used)
-Skipped - user not using OpenClaw.
+### 4. OpenClaw Plugin
+Not used in this build.
 
 ## Demo Flow
 

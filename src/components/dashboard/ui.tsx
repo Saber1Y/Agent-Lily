@@ -75,6 +75,8 @@ export function TextField(props: {
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  readOnly?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <label className="block">
@@ -86,6 +88,8 @@ export function TextField(props: {
         value={props.value}
         placeholder={props.placeholder}
         onChange={(e) => props.onChange(e.target.value)}
+        readOnly={props.readOnly}
+        disabled={props.disabled}
         className="w-full rounded-2xl border border-[#2B2B39] bg-[#101018] px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-[#5F6073] focus:border-[#fab6f5]/50"
       />
     </label>

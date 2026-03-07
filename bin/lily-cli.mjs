@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 
+import fs from "fs";
+import os from "os";
+import path from "path";
+
 const HELP_TEXT = `Agent Lily CLI
 
 Usage:
   lily help
+  lily auth status
+  lily auth token <TOKEN> [--base-url URL]
+  lily auth logout
   lily status [--base-url URL] [--token TOKEN]
   lily yields [--base-url URL] [--token TOKEN]
   lily report [--base-url URL] [--token TOKEN]
@@ -29,14 +36,20 @@ Config set options:
 
 Environment:
   LILY_BASE_URL   Base URL for deployed app, default http://127.0.0.1:3000
-  LILY_AGENT_TOKEN  Agent admin token
+  LILY_AGENT_TOKEN  Lily CLI token or admin token
 `;
 
 async function main() {
   const [, , command, subcommand, ...rest] = process.argv;
   const args = parseArgs(rest);
-  const baseUrl = normalizeBaseUrl(args["base-url"] || process.env.LILY_BASE_URL || "http://127.0.0.1:3000");
-  const token = args.token || process.env.LILY_AGENT_TOKEN || "";
+  const storedConfig = readCliConfig();
+  const baseUrl = normalizeBaseUrl(
+    args["base-url"] ||
+      process.env.LILY_BASE_URL ||
+      storedConfig.baseUrl ||
+      "http://127.0.0.1:3000",
+  );
+  const token = args.token || process.env.LILY_AGENT_TOKEN || storedConfig.token || "";
 
   if (!command || command === "help" || command === "--help" || command === "-h") {
     console.log(HELP_TEXT);
@@ -44,6 +57,9 @@ async function main() {
   }
 
   switch (command) {
+    case "auth":
+      await handleAuth(subcommand, rest, args, baseUrl);
+      return;
     case "status":
       await printStatus(baseUrl, token);
       return;
@@ -72,6 +88,36 @@ async function main() {
       return;
     default:
       fail(`Unknown command: ${command}`);
+  }
+}
+
+async function handleAuth(subcommand, rest, args, baseUrl) {
+  switch (subcommand) {
+    case "status":
+      printAuthStatus(readCliConfig(), baseUrl);
+      return;
+    case "token": {
+      const tokenValue = rest.find((item) => !item.startsWith("--") && item !== "token");
+      if (!tokenValue) {
+        fail("Usage: lily auth token <TOKEN> [--base-url URL]");
+      }
+      const resolvedBaseUrl = normalizeBaseUrl(
+        args["base-url"] || process.env.LILY_BASE_URL || baseUrl,
+      );
+      saveCliConfig({
+        ...readCliConfig(),
+        token: tokenValue,
+        baseUrl: resolvedBaseUrl,
+      });
+      console.log(`Saved Lily CLI token for ${resolvedBaseUrl}`);
+      return;
+    }
+    case "logout":
+      clearCliConfig();
+      console.log("Cleared Lily CLI credentials");
+      return;
+    default:
+      fail("Unknown auth subcommand. Use `auth status`, `auth token`, or `auth logout`.");
   }
 }
 
@@ -260,6 +306,38 @@ function toNumberList(value) {
 function fail(message) {
   console.error(`Error: ${message}`);
   process.exit(1);
+}
+
+function getCliConfigPath() {
+  return path.join(os.homedir(), ".lily", "config.json");
+}
+
+function readCliConfig() {
+  try {
+    const raw = fs.readFileSync(getCliConfigPath(), "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function saveCliConfig(config) {
+  const configPath = getCliConfigPath();
+  fs.mkdirSync(path.dirname(configPath), { recursive: true });
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+}
+
+function clearCliConfig() {
+  try {
+    fs.unlinkSync(getCliConfigPath());
+  } catch {}
+}
+
+function printAuthStatus(config, baseUrl) {
+  console.log("Agent Lily CLI Auth");
+  console.log(`Base URL: ${config.baseUrl || baseUrl}`);
+  console.log(`Token: ${config.token ? "stored" : "not set"}`);
+  console.log(`Config path: ${getCliConfigPath()}`);
 }
 
 await main();
