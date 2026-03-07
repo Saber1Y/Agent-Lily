@@ -1,25 +1,21 @@
 'use client';
 
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { ConnectWalletEnabled } from './ConnectWalletEnabled';
 
 export function ConnectWallet() {
-  const {  setShowAuthFlow, primaryWallet } = useDynamicContext();
+  const environmentId = process.env.NEXT_PUBLIC_DYNAMIC_ENV_ID;
 
-  if (primaryWallet) {
-    const address = primaryWallet.address;
+  if (!environmentId) {
     return (
-      <button className="px-4 py-2 rounded-full bg-[#fab6f5] text-black font-semibold text-sm hover:opacity-90 transition">
-        {address?.slice(0, 6)}...{address?.slice(-4)}
+      <button
+        disabled
+        className="px-4 py-2 rounded-full bg-[#2A2A35] text-[#A0A0B0] font-semibold text-sm cursor-not-allowed"
+        title="Set NEXT_PUBLIC_DYNAMIC_ENV_ID to enable wallet connections"
+      >
+        Wallet Disabled
       </button>
     );
   }
 
-  return (
-    <button
-      onClick={() => setShowAuthFlow(true)}
-      className="px-4 py-2 rounded-full bg-[#fab6f5] text-black font-semibold text-sm hover:opacity-90 transition"
-    >
-      Connect Wallet
-    </button>
-  );
+  return <ConnectWalletEnabled />;
 }
