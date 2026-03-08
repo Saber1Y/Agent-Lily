@@ -81,29 +81,31 @@ export default function Home() {
           </h1>
 
           <p className="text-xl text-[#A0A0B0] max-w-2xl mx-auto mb-10">
-            A narrative-driven treasury copilot that monitors live USDC yields,
-            explains every move, and rebalances through LI.FI with policy-aware
-            automation.
+            A cross-chain operator console for USDC yield rebalancing. Agent
+            Lily monitors live Aave yields, prices LI.FI routes, explains every
+            move, and gives you approvals, reports, Telegram alerts, and CLI access.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/dashboard">
               <Button size="lg" className="glow-blue">
-                Talk to Lily →
+                Open Dashboard →
               </Button>
             </Link>
-            <Button variant="outline" size="lg">
-              View Documentation
-            </Button>
+            <Link href="/dashboard/chat">
+              <Button variant="outline" size="lg">
+                Talk to Lily
+              </Button>
+            </Link>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
             {[
-              { label: "Supported Chains", value: "8+" },
-              { label: "Total Volume", value: "$60B+" },
+              { label: "Dashboard Modules", value: "6" },
+              { label: "Operator Channels", value: "Chat + CLI + Telegram" },
               { label: "Policy Controls", value: "7" },
-              { label: "Protocols", value: "Aave + LI.FI" },
+              { label: "Execution Stack", value: "Aave + LI.FI" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-3xl font-bold gradient-text">
@@ -122,7 +124,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-white mb-4">How It Works</h2>
             <p className="text-[#A0A0B0]">
-              Agent Lily watches the market, explains the route, and acts inside your rules
+              Agent Lily watches the market, explains the route, and keeps operators inside explicit rules
             </p>
           </div>
 
@@ -190,6 +192,124 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="py-20 px-6 bg-[#12121A]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              What You Can Do Today
+            </h2>
+            <p className="text-[#A0A0B0]">
+              The product is already structured around real operator workflows, not one demo screen.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                title: "Dashboard Overview",
+                copy:
+                  "See recent runs, projected net gain, pending items, and the latest operator snapshot in one control room.",
+              },
+              {
+                title: "Approval Inbox",
+                copy:
+                  "Review dry-run opportunities and jump straight into chat to act on the exact recommendation.",
+              },
+              {
+                title: "Weekly Reports",
+                copy:
+                  "Show recent automation activity, projected net gain, and the summary judges can understand quickly.",
+              },
+              {
+                title: "Policy Engine",
+                copy:
+                  "Set minimum net gain, route cost, cooldowns, chain allowlists, and autonomous execution rules.",
+              },
+              {
+                title: "CLI + Telegram",
+                copy:
+                  "Generate Lily CLI tokens from the dashboard and deploy outbound Telegram alerts from the same backend.",
+              },
+            ].map((item) => (
+              <Card key={item.title} hover>
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-sm leading-6 text-[#A0A0B0]">
+                  {item.copy}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Full Workspace Map
+            </h2>
+            <p className="text-[#A0A0B0]">
+              Agent Lily is not just one chat screen. The product already ships as a modular operator workspace.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {[
+              {
+                title: "/dashboard",
+                label: "Overview",
+                copy:
+                  "Top-level control room with run metrics, projected net performance, and module entry points.",
+              },
+              {
+                title: "/dashboard/approvals",
+                label: "Approvals",
+                copy:
+                  "Dry-run recommendations that can be reviewed and handed off into chat for action.",
+              },
+              {
+                title: "/dashboard/chat",
+                label: "Chat",
+                copy:
+                  "Conversational workspace for live yield checks, bridge quotes, rebalance analysis, and wallet execution.",
+              },
+              {
+                title: "/dashboard/reports",
+                label: "Reports",
+                copy:
+                  "Stored run history, operator summaries, and judge-friendly weekly reporting context.",
+              },
+              {
+                title: "/dashboard/policies",
+                label: "Policies + CLI",
+                copy:
+                  "Admin workspace for chain filters, route-cost rules, cooldowns, auto-execution settings, and CLI token generation.",
+              },
+              {
+                title: "/dashboard/telegram",
+                label: "Telegram",
+                copy:
+                  "Admin workspace for deploying Lily as an outbound Telegram bot with encrypted bot credentials.",
+              },
+            ].map((item) => (
+              <Card key={item.title} hover>
+                <div className="text-xs uppercase tracking-[0.24em] text-[#72738A] mb-3">
+                  {item.label}
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-3">
+                  {item.title}
+                </h3>
+                <p className="text-sm leading-6 text-[#A0A0B0]">
+                  {item.copy}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Supported Chains */}
       <section className="py-20 px-6 bg-[#12121A]" id="supportedchains">
         <div className="max-w-6xl mx-auto">
@@ -232,23 +352,14 @@ export default function Home() {
               >
                 LI.FI
               </a>{" "}
-              • Yields from{" "}
+              • Yield data from{" "}
               <a
-                href="https://aavescan.com"
+                href="https://aave.com/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#F7C2FF] hover:underline"
               >
-                AaveScan
-              </a>{" "}
-              &{" "}
-              <a
-                href="https://kamino.finance"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#9945FF] hover:underline"
-              >
-                Kamino
+                Aave
               </a>
             </p>
           </div>
