@@ -1,8 +1,8 @@
 "use client";
 
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useWalletContext } from "@/components/WalletContext";
 
 export interface DashboardRun {
   id: string;
@@ -25,7 +25,7 @@ export interface DashboardReport {
 }
 
 export function useDashboardFeed() {
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet } = useWalletContext();
   const [runs, setRuns] = useState<DashboardRun[]>([]);
   const [report, setReport] = useState<DashboardReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);

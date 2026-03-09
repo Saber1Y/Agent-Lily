@@ -1,8 +1,8 @@
 "use client";
 
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useWalletContext } from "@/components/WalletContext";
 
 export interface AgentOpsConfig {
   currentChainId: number;
@@ -66,7 +66,7 @@ function getAuthorizedHeaders(walletAddress?: string) {
 }
 
 export function useAgentOps() {
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet } = useWalletContext();
   const [opsConfig, setOpsConfig] = useState<AgentOpsConfig>(defaultConfig);
   const [runs, setRuns] = useState<AgentRun[]>([]);
   const [report, setReport] = useState<AgentReport | null>(null);

@@ -1,9 +1,9 @@
 'use client';
 
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
+import { useWalletContext } from './WalletContext';
 
 export function ConnectWalletEnabled() {
-  const { setShowAuthFlow, primaryWallet } = useDynamicContext();
+  const { setShowAuthFlow, primaryWallet } = useWalletContext();
 
   if (primaryWallet) {
     const address = primaryWallet.address;
@@ -16,7 +16,7 @@ export function ConnectWalletEnabled() {
 
   return (
     <button
-      onClick={() => setShowAuthFlow(true)}
+      onClick={() => setShowAuthFlow?.(true)}
       className="px-4 py-2 rounded-full bg-[#fab6f5] text-black font-semibold text-sm hover:opacity-90 transition"
     >
       Connect Wallet

@@ -1,10 +1,14 @@
 {
-  "name": "lifi-yield-agent",
-  "version": "0.1.0",
-  "private": true,
+  "name": "agent-lily",
+  "version": "0.1.1",
+  "private": false,
   "bin": {
     "lily": "./bin/lily-cli.mjs"
   },
+  "files": [
+    "bin/",
+    "README.md"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

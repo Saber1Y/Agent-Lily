@@ -1,8 +1,7 @@
 "use client";
 
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
-
 import { clientEnv } from "@/env/client";
+import { useWalletContext } from "./WalletContext";
 import { ConnectWallet } from "./ConnectWallet";
 
 export function DashboardWalletGate({
@@ -29,7 +28,7 @@ function ConnectedWalletGate({
 }: {
   children: React.ReactNode;
 }) {
-  const { primaryWallet } = useDynamicContext();
+  const { primaryWallet } = useWalletContext();
 
   if (!primaryWallet?.address) {
     return (
