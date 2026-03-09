@@ -1,6 +1,6 @@
 {
   "name": "agent-lily",
-  "version": "0.1.1",
+  "version": "0.1.5",
   "private": false,
   "bin": {
     "lily": "./bin/lily-cli.mjs"
@@ -14,7 +14,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "cli": "node ./bin/lily-cli.mjs"
+    "cli": "node ./bin/lily-cli.mjs",
+    "prepack": "node ./bin/prepare-npm-readme.mjs apply",
+    "postpack": "node ./bin/prepare-npm-readme.mjs restore"
   },
   "dependencies": {
     "@dynamic-labs/ethereum": "^4.66.0",

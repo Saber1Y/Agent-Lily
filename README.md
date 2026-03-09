@@ -84,6 +84,19 @@ The app combines:
 - Supabase
 - Gemini
 
+## CLI
+
+Agent Lily also ships as an npm CLI package:
+
+- npm package: https://www.npmjs.com/package/agent-lily
+- CLI README: https://www.npmjs.com/package/agent-lily?activeTab=readme
+
+Install globally:
+
+```bash
+npm install -g agent-lily
+```
+
 ## Quick Start
 
 ```bash
