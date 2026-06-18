@@ -28,6 +28,7 @@ import {
   sendTelegramMessage,
 } from "./telegram";
 import { serverEnv } from "@/env/server";
+import { checkBridgeAuthorization, readT3nSecrets } from "./t3n/authorization";
 
 type AutomationStatus =
   | "skipped"
@@ -157,6 +158,32 @@ export async function runAutonomousRebalance(
     await maybeSendAlert(storedConfig?.alertWebhookUrl, triggerSource, result);
     await maybeSendTelegramAlert(storedConfig, triggerSource, result);
     return result;
+  }
+
+  const t3nCheck = checkBridgeAuthorization(recommendation.fromChain!, recommendation.toChain!, amountUsdc);
+  if (!t3nCheck.authorized) {
+    const t3nConfigured = !!readT3nSecrets();
+    if (t3nConfigured) {
+      const result: AutomationResult = {
+        status: "error",
+        mode: "analysis",
+        timestamp: new Date().toISOString(),
+        currentChainId,
+        amountUsdc,
+        message: `T3N auth gate: autonomous rebalance blocked. ${t3nCheck.reason}`,
+        reasoning: await reasoningPromise,
+        details: {
+          t3nBlocked: true,
+          t3nReason: t3nCheck.reason,
+          autoExecute,
+          hasPrivateKey: Boolean(privateKey),
+        },
+      };
+      await persistAutomationRun({ walletAddress, triggerSource, result });
+      await maybeSendAlert(storedConfig?.alertWebhookUrl, triggerSource, result);
+      await maybeSendTelegramAlert(storedConfig, triggerSource, result);
+      return result;
+    }
   }
 
   const route = await buildRoute({
