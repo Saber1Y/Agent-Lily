@@ -66,6 +66,19 @@ export async function getChatResponse(
     return handleT3nStatusRequest();
   }
 
+  try {
+    const res = await fetch("/api/chat/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: input }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.response) return data.response;
+    }
+  } catch {
+  }
+
   return [
     "Commands you can try:",
     `- "check yields"`,
