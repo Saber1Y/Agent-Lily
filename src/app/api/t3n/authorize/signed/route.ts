@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { recoverSigner, parseStoredAuthorization } from "@/lib/t3n/authorization";
 import type { BridgeAuthorization } from "@/lib/t3n/types";
+import { getStoredAgentConfig, saveAgentConfig } from "@/lib/persistence";
 
 const SUPPORTED_CHAINS = [1, 10, 137, 42161, 8453, 84532, 43114];
 
@@ -95,11 +96,24 @@ export async function POST(request: NextRequest) {
     signerAddress: signed.signerAddress,
   });
 
+  const walletAddress = recovered.address.toLowerCase();
+  const existingConfig = await getStoredAgentConfig(walletAddress);
+
+  if (existingConfig) {
+    const updated = await saveAgentConfig({ ...existingConfig, t3nBridgeAuth: serialized });
+    if (!updated) {
+      console.warn("Signed T3N auth verified but failed to save to DB");
+    }
+  }
+
   return NextResponse.json({
     status: "success",
-    message: "Bridge authorization verified and ready.",
+    message: existingConfig
+      ? "Bridge authorization verified and saved to your agent config."
+      : "Bridge authorization verified. Register your agent on the dashboard first to auto-save; for now set T3N_BRIDGE_AUTH in .env.local.",
     verified: true,
     operatorAddress: recovered.address,
+    stored: !!existingConfig,
     authorization: {
       maxAmountPerBridge: signed.authorization.maxAmountPerBridge,
       allowedSourceChains: signed.authorization.allowedSourceChains,
@@ -107,11 +121,6 @@ export async function POST(request: NextRequest) {
       issuedAt: new Date(signed.authorization.issuedAt * 1000).toISOString(),
       expiresAt: new Date(signed.authorization.expiresAt * 1000).toISOString(),
     },
-    envVar: {
-      key: "T3N_BRIDGE_AUTH",
-      value: serialized,
-      instruction:
-        "Copy the entire value below and add it to your .env.local as T3N_BRIDGE_AUTH=<value>, then restart the server.",
-    },
+    envVarValue: serialized,
   });
 }

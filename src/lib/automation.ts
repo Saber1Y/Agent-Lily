@@ -160,7 +160,7 @@ export async function runAutonomousRebalance(
     return result;
   }
 
-  const t3nCheck = checkBridgeAuthorization(recommendation.fromChain!, recommendation.toChain!, amountUsdc);
+  const t3nCheck = checkBridgeAuthorization(recommendation.fromChain!, recommendation.toChain!, amountUsdc, storedConfig?.t3nBridgeAuth);
   if (!t3nCheck.authorized) {
     if (isT3nConfigured()) {
       const result: AutomationResult = {

@@ -18,6 +18,7 @@ export interface StoredAgentConfig {
   telegramBotToken?: string | null;
   telegramChatId?: string | null;
   telegramEnabled?: boolean | null;
+  t3nBridgeAuth?: string | null;
   updatedAt?: string | null;
 }
 
@@ -70,6 +71,7 @@ interface AgentConfigRow {
   telegram_bot_token?: string | null;
   telegram_chat_id?: string | null;
   telegram_enabled?: boolean | null;
+  t3n_bridge_auth?: string | null;
   updated_at?: string | null;
 }
 
@@ -109,7 +111,7 @@ export async function getStoredAgentConfig(
   const { data, error } = await supabase
     .from("agent_configs")
     .select(
-      "id, wallet_address, current_chain_id, position_usdc, auto_rebalance_enabled, min_yield_delta_pct, min_net_gain_usd, max_route_cost_usd, cooldown_minutes, allowed_destination_chain_ids, blocked_chain_ids, alert_webhook_url, telegram_bot_token, telegram_chat_id, telegram_enabled, updated_at",
+      "id, wallet_address, current_chain_id, position_usdc, auto_rebalance_enabled, min_yield_delta_pct, min_net_gain_usd, max_route_cost_usd, cooldown_minutes, allowed_destination_chain_ids, blocked_chain_ids, alert_webhook_url, telegram_bot_token, telegram_chat_id, telegram_enabled, t3n_bridge_auth, updated_at",
     )
     .eq("wallet_address", walletAddress)
     .maybeSingle<AgentConfigRow>();
@@ -157,6 +159,7 @@ export async function saveAgentConfig(
       telegram_bot_token: encryptConfigValue(config.telegramBotToken ?? null),
       telegram_chat_id: encryptConfigValue(config.telegramChatId ?? null),
       telegram_enabled: config.telegramEnabled ?? null,
+      t3n_bridge_auth: config.t3nBridgeAuth ?? null,
     };
   } catch (error) {
     console.error("Failed to encrypt agent config", error);
@@ -167,7 +170,7 @@ export async function saveAgentConfig(
     .from("agent_configs")
     .upsert(row, { onConflict: "wallet_address" })
     .select(
-      "id, wallet_address, current_chain_id, position_usdc, auto_rebalance_enabled, min_yield_delta_pct, min_net_gain_usd, max_route_cost_usd, cooldown_minutes, allowed_destination_chain_ids, blocked_chain_ids, alert_webhook_url, telegram_bot_token, telegram_chat_id, telegram_enabled, updated_at",
+      "id, wallet_address, current_chain_id, position_usdc, auto_rebalance_enabled, min_yield_delta_pct, min_net_gain_usd, max_route_cost_usd, cooldown_minutes, allowed_destination_chain_ids, blocked_chain_ids, alert_webhook_url, telegram_bot_token, telegram_chat_id, telegram_enabled, t3n_bridge_auth, updated_at",
     )
     .single<AgentConfigRow>();
 
@@ -339,6 +342,7 @@ function mapAgentConfigRow(row: AgentConfigRow): StoredAgentConfig {
     telegramBotToken: decryptConfigValue(row.telegram_bot_token ?? null),
     telegramChatId: decryptConfigValue(row.telegram_chat_id ?? null),
     telegramEnabled: row.telegram_enabled ?? null,
+    t3nBridgeAuth: row.t3n_bridge_auth ?? null,
     updatedAt: row.updated_at ?? null,
   };
 }

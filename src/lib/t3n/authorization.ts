@@ -21,8 +21,8 @@ export function readT3nSecrets(): T3nSecrets | null {
   return { agentApiKey: apiKey, agentDid, baseUrl };
 }
 
-export function getStoredAuthorization(): SignedBridgeAuthorization | null {
-  const raw = typeof process !== "undefined" ? process.env.T3N_BRIDGE_AUTH : undefined;
+export function getStoredAuthorization(storedAuthOverride?: string | null): SignedBridgeAuthorization | null {
+  const raw = storedAuthOverride ?? (typeof process !== "undefined" ? process.env.T3N_BRIDGE_AUTH : undefined);
   if (!raw) return null;
 
   return parseStoredAuthorization(raw);
@@ -32,9 +32,10 @@ export function checkBridgeAuthorization(
   fromChainId: number,
   toChainId: number,
   amount: string,
+  storedAuthOverride?: string | null,
 ) {
   const secrets = readT3nSecrets();
-  const storedAuth = getStoredAuthorization();
+  const storedAuth = getStoredAuthorization(storedAuthOverride);
   return coreCheck(fromChainId, toChainId, amount, secrets, storedAuth);
 }
 

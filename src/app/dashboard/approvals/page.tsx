@@ -107,7 +107,7 @@ export default function DashboardApprovalsPage() {
         throw new Error(data.message || `HTTP ${res.status}`);
       }
 
-      setAuthResult(data.envVar.value);
+      setAuthResult(data.stored ? null : data.envVarValue);
       await checkT3nStatus();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to sign authorization.");
@@ -191,26 +191,29 @@ export default function DashboardApprovalsPage() {
                   </div>
                 )}
 
-                {authResult && (
+                {(authResult || (t3nStatus?.authorized && error === null)) && (
                   <div className="rounded-xl bg-[#1a1a2e] border border-[#262633] p-4">
                     <div className="mb-2 text-sm font-semibold text-[#fab6f5]">
                       Authorization Signed ✅
                     </div>
                     <div className="mb-3 text-xs text-[#707083]">
-                      Add this to your <code className="text-[#fab6f5]">.env.local</code> as
-                      {" "}<code className="text-[#fab6f5]">T3N_BRIDGE_AUTH</code>, then restart the server:
+                      {authResult
+                        ? "Register your agent on the dashboard first. For now, add this to .env.local:"
+                        : "Bridge authorization saved to your agent config. No restart needed."}
                     </div>
-                    <div className="relative">
-                      <pre className="max-h-40 overflow-auto rounded-xl bg-black/50 p-3 text-xs text-[#c0c0d0] break-all">
-                        {authResult}
-                      </pre>
-                      <button
-                        onClick={() => copyToClipboard(authResult)}
-                        className="mt-2 rounded-lg bg-[#262633] px-3 py-1.5 text-xs text-[#c0c0d0] hover:bg-[#323242]"
-                      >
-                        Copy
-                      </button>
-                    </div>
+                    {authResult && (
+                      <div className="relative">
+                        <pre className="max-h-40 overflow-auto rounded-xl bg-black/50 p-3 text-xs text-[#c0c0d0] break-all">
+                          {authResult}
+                        </pre>
+                        <button
+                          onClick={() => copyToClipboard(authResult)}
+                          className="mt-2 rounded-lg bg-[#262633] px-3 py-1.5 text-xs text-[#c0c0d0] hover:bg-[#323242]"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
