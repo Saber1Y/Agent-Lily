@@ -60,6 +60,10 @@ export async function getChatResponse(
     return handleYieldRequest();
   }
 
+  if (lowerInput.includes("t3n") || lowerInput.includes("terminal3") || lowerInput.includes("auth status")) {
+    return handleT3nStatusRequest();
+  }
+
   return [
     "Commands you can try:",
     `- "check yields"`,
@@ -67,6 +71,7 @@ export async function getChatResponse(
     `- "bridge 250 usdc from optimism to base"`,
     `- "check balance on arbitrum"`,
     `- "supported chains"`,
+    `- "t3n status"`,
   ].join("\n");
 }
 
@@ -202,6 +207,61 @@ async function handleBridgeRequest(
     amount,
     fromAddress: walletAddress,
   });
+}
+
+async function handleT3nStatusRequest(): Promise<string> {
+  try {
+    const res = await fetch("/api/t3n/status");
+    if (!res.ok) {
+      return `T3N status: API returned ${res.status}`;
+    }
+    const data = await res.json();
+
+    const lines = [
+      "T3N Agent Auth Status",
+      `Configured: ${data.configured ? "✅" : "❌"}`,
+      `Connected: ${data.connected ? "✅" : "❌"}`,
+    ];
+
+    if (data.configured) {
+      lines.push(
+        `Agent DID: ${data.agentDid || "N/A"}`,
+        `Operator: ${data.operatorAddress || "N/A"}`,
+        `Environment: ${data.environment || "N/A"}`,
+        `Session: ${data.sessionId ? data.sessionId.slice(0, 16) + "..." : "none"}`,
+        `Authorized: ${data.authorized ? "✅" : "❌"}`,
+      );
+
+      if (data.authorization) {
+        const a = data.authorization;
+        lines.push(
+          "",
+          "Active Bridge Authorization",
+          `Max per bridge: ${a.maxAmountPerBridge} USDC`,
+          `Source chains: ${a.allowedSourceChains.join(", ")}`,
+          `Dest chains: ${a.allowedDestinationChains.join(", ")}`,
+          `Issued: ${new Date(a.issuedAt).toLocaleDateString()}`,
+          `Expires: ${new Date(a.expiresAt).toLocaleDateString()}`,
+          `Signed by: ${a.signerAddress.slice(0, 6)}...${a.signerAddress.slice(-4)}`,
+        );
+      } else {
+        lines.push("", "No bridge authorization issued yet.");
+        lines.push('Use the operator console or POST /api/t3n/authorize to issue one.');
+      }
+    } else {
+      lines.push(
+        "",
+        "To configure T3N:",
+        "1. Sign up at https://terminal3.io/claim-page",
+        "2. Set T3N_AGENT_API_KEY, T3N_AGENT_DID, T3N_OPERATOR_ADDRESS in .env.local",
+        "3. Restart the server",
+      );
+    }
+
+    return lines.join("\n");
+  } catch (error) {
+    return `T3N status check failed: ${error instanceof Error ? error.message : "Unknown error"}`;
+  }
 }
 
 function extractAmount(input: string): string | null {
