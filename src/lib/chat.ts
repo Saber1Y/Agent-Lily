@@ -16,9 +16,10 @@ const CHAIN_KEYWORDS = [
   { keyword: "polygon", chainId: 137 },
   { keyword: "matic", chainId: 137 },
   { keyword: "arbitrum", chainId: 42161 },
-  { keyword: "base", chainId: 8453 },
   { keyword: "base sepolia", chainId: 84532 },
+  { keyword: "base testnet", chainId: 84532 },
   { keyword: "base-sepolia", chainId: 84532 },
+  { keyword: "base", chainId: 8453 },
   { keyword: "avalanche", chainId: 43114 },
   { keyword: "avax", chainId: 43114 },
 ] as const;
@@ -108,6 +109,7 @@ async function handleBalanceRequest(
     137: "Polygon",
     42161: "Arbitrum",
     8453: "Base",
+    84532: "Base Sepolia",
     43114: "Avalanche",
   };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { DashboardShell } from "@/components/DashboardShell";
@@ -54,6 +54,10 @@ export default function DashboardApprovalsPage() {
       setT3nStatus(null);
     }
   }, []);
+
+  useEffect(() => {
+    checkT3nStatus();
+  }, [checkT3nStatus]);
 
   const handleSignAuthorization = useCallback(async () => {
     if (!primaryWallet?.connector) {
