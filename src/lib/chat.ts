@@ -17,6 +17,8 @@ const CHAIN_KEYWORDS = [
   { keyword: "matic", chainId: 137 },
   { keyword: "arbitrum", chainId: 42161 },
   { keyword: "base", chainId: 8453 },
+  { keyword: "base sepolia", chainId: 84532 },
+  { keyword: "base-sepolia", chainId: 84532 },
   { keyword: "avalanche", chainId: 43114 },
   { keyword: "avax", chainId: 43114 },
 ] as const;

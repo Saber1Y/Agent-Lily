@@ -3,6 +3,7 @@ import {
   arbitrum,
   avalanche,
   base,
+  baseSepolia,
   mainnet,
   optimism,
   polygon,
@@ -30,6 +31,10 @@ export const EVM_CHAINS: Record<
   8453: {
     chain: base,
     rpcUrl: "https://base-rpc.publicnode.com",
+  },
+  84532: {
+    chain: baseSepolia,
+    rpcUrl: "https://sepolia.base.org",
   },
   42161: {
     chain: arbitrum,

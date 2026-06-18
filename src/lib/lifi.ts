@@ -17,6 +17,7 @@ export const USDC_ADDRESSES: Record<number, string> = {
   42161: "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
   8453: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   43114: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+  84532: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
   [SOLANA_CHAIN_ID]: "USDC",
 };
 
@@ -172,6 +173,7 @@ const CHAIN_NAMES_FALLBACK: Record<number, string> = {
   137: "Polygon",
   42161: "Arbitrum",
   8453: "Base",
+  84532: "Base Sepolia",
   43114: "Avalanche",
   [SOLANA_CHAIN_ID]: "Solana",
 };
