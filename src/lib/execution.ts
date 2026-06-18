@@ -15,7 +15,6 @@ import {
   USDC_ADDRESSES,
   toUsdcBaseUnits,
 } from "./lifi";
-import { checkBridgeAuthorization, readT3nSecrets } from "./t3n/authorization";
 
 interface WalletConnectorLike {
   getWalletClient<T>(chainId?: string): T;
@@ -206,16 +205,6 @@ async function executeBridge(params: {
     );
   }
 
-  const t3nCheck = checkBridgeAuthorization(params.fromChainId, params.toChainId, params.amount);
-  if (!t3nCheck.authorized) {
-    const t3nConfigured = !!readT3nSecrets();
-    if (t3nConfigured) {
-      throw new Error(
-        `T3N auth gate: bridge blocked. ${t3nCheck.reason}`,
-      );
-    }
-  }
-
   const route = await buildExecutableRoute({
     wallet: params.wallet,
     fromChainId: params.fromChainId,
@@ -255,16 +244,6 @@ async function executeRebalance(params: {
     throw new Error(
       `Insufficient USDC balance on ${balanceCheck.chainName}. You have ${balanceCheck.balance} USDC but need ${balanceCheck.required} USDC. Please switch to ${balanceCheck.chainName} network or fund your wallet.`,
     );
-  }
-
-  const t3nCheck = checkBridgeAuthorization(recommendation.fromChain!, recommendation.toChain!, params.amount);
-  if (!t3nCheck.authorized) {
-    const t3nConfigured = !!readT3nSecrets();
-    if (t3nConfigured) {
-      throw new Error(
-        `T3N auth gate: rebalance blocked. ${t3nCheck.reason}`,
-      );
-    }
   }
 
   const route = await buildExecutableRoute({

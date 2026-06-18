@@ -28,7 +28,7 @@ import {
   sendTelegramMessage,
 } from "./telegram";
 import { serverEnv } from "@/env/server";
-import { checkBridgeAuthorization, readT3nSecrets } from "./t3n/authorization";
+import { checkBridgeAuthorization, isT3nConfigured } from "./t3n/authorization";
 
 type AutomationStatus =
   | "skipped"
@@ -162,8 +162,7 @@ export async function runAutonomousRebalance(
 
   const t3nCheck = checkBridgeAuthorization(recommendation.fromChain!, recommendation.toChain!, amountUsdc);
   if (!t3nCheck.authorized) {
-    const t3nConfigured = !!readT3nSecrets();
-    if (t3nConfigured) {
+    if (isT3nConfigured()) {
       const result: AutomationResult = {
         status: "error",
         mode: "analysis",

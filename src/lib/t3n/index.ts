@@ -5,7 +5,6 @@ import {
   createDefaultHandlers,
   type WasmComponent,
 } from "@terminal3/t3n-sdk";
-import { serverEnv } from "@/env/server";
 import { type T3nStatus } from "./types";
 
 let client: T3nClient | null = null;
@@ -15,9 +14,9 @@ let agentDid: string | null = null;
 let connectionAttempted = false;
 
 export function getT3nCredentials(): { apiKey: string; agentDid: string; baseUrl: string } | null {
-  const apiKey = serverEnv.t3nAgentApiKey;
-  const did = serverEnv.t3nAgentDid;
-  const baseUrl = serverEnv.t3nBaseUrl || "https://testnet.terminal3.io";
+  const apiKey = typeof process !== "undefined" ? process.env.T3N_AGENT_API_KEY : undefined;
+  const did = typeof process !== "undefined" ? process.env.T3N_AGENT_DID : undefined;
+  const baseUrl = (typeof process !== "undefined" ? process.env.T3N_BASE_URL : undefined) || "https://testnet.terminal3.io";
 
   if (!apiKey || !did) {
     return null;
@@ -65,7 +64,6 @@ export async function connectT3n(): Promise<T3nStatus> {
     if (!sessionId) {
       const handshakeResult = await client.handshake();
       sessionId = handshakeResult.sessionId.value;
-
       agentDid = creds.agentDid;
     }
 
