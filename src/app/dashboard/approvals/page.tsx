@@ -79,7 +79,7 @@ export default function DashboardApprovalsPage() {
         .join("");
 
       const authorization = {
-        version: "lily-bridge-auth-v1",
+        version: "lily-bridge-auth-v1" as const,
         agentDid: "",
         operatorAddress: walletClient.account.address,
         issuedAt: now,
@@ -90,16 +90,26 @@ export default function DashboardApprovalsPage() {
         nonce,
       };
 
-      const message = JSON.stringify(authorization);
+      const jcsMessage = JSON.stringify({
+        version: authorization.version,
+        agentDid: authorization.agentDid,
+        operatorAddress: authorization.operatorAddress,
+        issuedAt: authorization.issuedAt,
+        expiresAt: authorization.expiresAt,
+        maxAmountPerBridge: authorization.maxAmountPerBridge,
+        allowedSourceChains: [...authorization.allowedSourceChains].sort((a, b) => a - b),
+        allowedDestinationChains: [...authorization.allowedDestinationChains].sort((a, b) => a - b),
+        nonce: authorization.nonce,
+      });
       const signature = await walletClient.signMessage({
         account: walletClient.account,
-        message,
+        message: jcsMessage,
       });
 
       const res = await fetch("/api/t3n/authorize/signed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ authorization, signature }),
+        body: JSON.stringify({ authorization: JSON.parse(jcsMessage), signature }),
       });
 
       const data = await res.json();

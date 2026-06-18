@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     signerAddress: authorization.operatorAddress,
   };
 
-  const recovered = recoverSigner(signed);
+  const recovered = await recoverSigner(signed);
   if (!recovered.valid) {
     return NextResponse.json(
       { status: "error", message: `Signature verification failed: ${recovered.error}` },

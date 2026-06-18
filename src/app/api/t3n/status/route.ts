@@ -13,7 +13,7 @@ export async function GET() {
 
     let signerAddress: string | null = null;
     if (auth) {
-      const recovered = recoverSigner(auth);
+      const recovered = await recoverSigner(auth);
       signerAddress = recovered.address;
     }
 

@@ -1,8 +1,7 @@
 import {
   signCredential,
-  ethRecoverEip191,
-  eip191Digest,
 } from "@terminal3/t3n-sdk";
+import { recoverMessageAddress } from "viem";
 import {
   type BridgeAuthorization,
   type SignedBridgeAuthorization,
@@ -27,27 +26,26 @@ function authorizationToJcs(auth: BridgeAuthorization): Uint8Array {
   return new TextEncoder().encode(canonical);
 }
 
-export function recoverSigner(
+export async function recoverSigner(
   signed: SignedBridgeAuthorization,
-): { address: string; valid: boolean; error?: string } {
+): Promise<{ address: string; valid: boolean; error?: string }> {
   try {
     const jcs = authorizationToJcs(signed.authorization);
-    const digest = eip191Digest(jcs);
-    const signatureBytes = hexToBytes(signed.signatureHex);
 
-    const recoveredAddress = ethRecoverEip191(digest, signatureBytes);
-    const recoveredHex = bytesToHex(recoveredAddress);
-    const expectedHex = signed.signerAddress.replace("0x", "").toLowerCase();
+    const recoveredAddress = await recoverMessageAddress({
+      message: { raw: jcs },
+      signature: signed.signatureHex as `0x${string}`,
+    });
 
-    if (recoveredHex.toLowerCase() !== expectedHex) {
+    if (recoveredAddress.toLowerCase() !== signed.signerAddress.toLowerCase()) {
       return {
-        address: `0x${recoveredHex}`,
+        address: recoveredAddress,
         valid: false,
-        error: `Signature mismatch: recovered 0x${recoveredHex}, expected ${signed.signerAddress}`,
+        error: `Signature mismatch: recovered ${recoveredAddress}, expected ${signed.signerAddress}`,
       };
     }
 
-    return { address: `0x${recoveredHex}`, valid: true };
+    return { address: recoveredAddress, valid: true };
   } catch (error) {
     return {
       address: signed.signerAddress,
@@ -57,13 +55,13 @@ export function recoverSigner(
   }
 }
 
-export function checkBridgeAuthorization(
+export async function checkBridgeAuthorization(
   fromChainId: number,
   toChainId: number,
   amount: string,
   secrets: T3nSecrets | null,
   storedAuth: SignedBridgeAuthorization | null,
-): AuthCheckResult {
+): Promise<AuthCheckResult> {
   if (!secrets) {
     return {
       authorized: false,
@@ -88,7 +86,7 @@ export function checkBridgeAuthorization(
     };
   }
 
-  const { valid, error, address } = recoverSigner(storedAuth);
+  const { valid, error, address } = await recoverSigner(storedAuth);
   if (!valid) {
     return {
       authorized: false,

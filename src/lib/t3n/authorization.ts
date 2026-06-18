@@ -28,7 +28,7 @@ export function getStoredAuthorization(storedAuthOverride?: string | null): Sign
   return parseStoredAuthorization(raw);
 }
 
-export function checkBridgeAuthorization(
+export async function checkBridgeAuthorization(
   fromChainId: number,
   toChainId: number,
   amount: string,
