@@ -3,25 +3,22 @@ import {
   checkBridgeAuthorization as coreCheck,
   createBridgeAuthorization as coreCreate,
   parseStoredAuthorization,
-  verifyAuthorization,
+  recoverSigner,
 } from "./authCore";
 
-export { verifyAuthorization, parseStoredAuthorization };
-export {
-  createBridgeAuthorization,
-} from "./authCore";
+export { recoverSigner, parseStoredAuthorization };
+export { createBridgeAuthorization } from "./authCore";
 
 export function readT3nSecrets(): T3nSecrets | null {
   const apiKey = typeof process !== "undefined" ? process.env.T3N_AGENT_API_KEY : undefined;
   const agentDid = typeof process !== "undefined" ? process.env.T3N_AGENT_DID : undefined;
-  const operatorAddress = typeof process !== "undefined" ? process.env.T3N_OPERATOR_ADDRESS : undefined;
-  const baseUrl = typeof process !== "undefined" ? process.env.T3N_BASE_URL : undefined;
+  const baseUrl = (typeof process !== "undefined" ? process.env.T3N_BASE_URL : undefined) || "https://testnet.terminal3.io";
 
-  if (!apiKey || !agentDid || !operatorAddress) {
+  if (!apiKey || !agentDid) {
     return null;
   }
 
-  return { agentApiKey: apiKey, agentDid, operatorAddress, baseUrl: baseUrl || "https://testnet.terminal3.io" };
+  return { agentApiKey: apiKey, agentDid, baseUrl };
 }
 
 export function getStoredAuthorization(): SignedBridgeAuthorization | null {

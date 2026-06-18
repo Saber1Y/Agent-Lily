@@ -27,10 +27,9 @@ function authorizationToJcs(auth: BridgeAuthorization): Uint8Array {
   return new TextEncoder().encode(canonical);
 }
 
-export function verifyAuthorization(
+export function recoverSigner(
   signed: SignedBridgeAuthorization,
-  expectedOperatorAddress: string,
-): { valid: boolean; error?: string } {
+): { address: string; valid: boolean; error?: string } {
   try {
     const jcs = authorizationToJcs(signed.authorization);
     const digest = eip191Digest(jcs);
@@ -38,19 +37,22 @@ export function verifyAuthorization(
 
     const recoveredAddress = ethRecoverEip191(digest, signatureBytes);
     const recoveredHex = bytesToHex(recoveredAddress);
+    const expectedHex = signed.signerAddress.replace("0x", "").toLowerCase();
 
-    if (recoveredHex.toLowerCase() !== expectedOperatorAddress.toLowerCase()) {
+    if (recoveredHex.toLowerCase() !== expectedHex) {
       return {
+        address: `0x${recoveredHex}`,
         valid: false,
-        error: `Authorization signed by 0x${recoveredHex}, expected ${expectedOperatorAddress}`,
+        error: `Signature mismatch: recovered 0x${recoveredHex}, expected ${signed.signerAddress}`,
       };
     }
 
-    return { valid: true };
+    return { address: `0x${recoveredHex}`, valid: true };
   } catch (error) {
     return {
+      address: signed.signerAddress,
       valid: false,
-      error: `Authorization verification failed: ${error instanceof Error ? error.message : String(error)}`,
+      error: `Verification failed: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
@@ -65,9 +67,8 @@ export function checkBridgeAuthorization(
   if (!secrets) {
     return {
       authorized: false,
-      reason: "T3N not configured. Set T3N_AGENT_API_KEY, T3N_AGENT_DID, and T3N_OPERATOR_ADDRESS.",
+      reason: "T3N not configured. Set T3N_AGENT_API_KEY and T3N_AGENT_DID.",
       operatorAddress: null,
-      signedByExpectedOperator: false,
       isExpired: false,
       amountWithinLimit: false,
       chainsAllowed: false,
@@ -78,9 +79,8 @@ export function checkBridgeAuthorization(
   if (!storedAuth) {
     return {
       authorized: false,
-      reason: "No bridge authorization found. Issue one via the operator console or /api/t3n/authorize.",
-      operatorAddress: secrets.operatorAddress,
-      signedByExpectedOperator: false,
+      reason: "No bridge authorization found. Sign one from the dashboard or call POST /api/t3n/authorize.",
+      operatorAddress: null,
       isExpired: false,
       amountWithinLimit: false,
       chainsAllowed: false,
@@ -88,13 +88,12 @@ export function checkBridgeAuthorization(
     };
   }
 
-  const { valid, error } = verifyAuthorization(storedAuth, secrets.operatorAddress);
+  const { valid, error, address } = recoverSigner(storedAuth);
   if (!valid) {
     return {
       authorized: false,
       reason: `Authorization signature invalid: ${error}`,
-      operatorAddress: secrets.operatorAddress,
-      signedByExpectedOperator: false,
+      operatorAddress: address ?? null,
       isExpired: false,
       amountWithinLimit: false,
       chainsAllowed: false,
@@ -115,9 +114,8 @@ export function checkBridgeAuthorization(
   if (expired) {
     return {
       authorized: false,
-      reason: `Bridge authorization expired at ${new Date(auth.expiresAt * 1000).toISOString()}. Issue a new one.`,
-      operatorAddress: secrets.operatorAddress,
-      signedByExpectedOperator: true,
+      reason: `Bridge authorization expired at ${new Date(auth.expiresAt * 1000).toISOString()}. Sign a new one.`,
+      operatorAddress: address ?? null,
       isExpired: true,
       amountWithinLimit: amountOk,
       chainsAllowed: chainsOk,
@@ -129,8 +127,7 @@ export function checkBridgeAuthorization(
     return {
       authorized: false,
       reason: `Bridge amount ${amount} USDC exceeds authorized maximum of ${auth.maxAmountPerBridge} USDC per bridge.`,
-      operatorAddress: secrets.operatorAddress,
-      signedByExpectedOperator: true,
+      operatorAddress: address ?? null,
       isExpired: false,
       amountWithinLimit: false,
       chainsAllowed: chainsOk,
@@ -142,8 +139,7 @@ export function checkBridgeAuthorization(
     return {
       authorized: false,
       reason: `Bridge from chain ${fromChainId} to ${toChainId} not in authorized set. Allowed sources: ${auth.allowedSourceChains.join(", ")}. Allowed destinations: ${auth.allowedDestinationChains.join(", ")}.`,
-      operatorAddress: secrets.operatorAddress,
-      signedByExpectedOperator: true,
+      operatorAddress: address ?? null,
       isExpired: false,
       amountWithinLimit: amountOk,
       chainsAllowed: false,
@@ -153,9 +149,8 @@ export function checkBridgeAuthorization(
 
   return {
     authorized: true,
-    reason: `Authorization valid. Signed by operator ${secrets.operatorAddress}. Expires ${new Date(auth.expiresAt * 1000).toISOString()}.`,
-    operatorAddress: secrets.operatorAddress,
-    signedByExpectedOperator: true,
+    reason: `Authorization valid. Signed by ${address ?? "unknown"}. Expires ${new Date(auth.expiresAt * 1000).toISOString()}.`,
+    operatorAddress: address ?? null,
     isExpired: false,
     amountWithinLimit: true,
     chainsAllowed: true,

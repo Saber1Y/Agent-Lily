@@ -1,7 +1,6 @@
 export interface T3nSecrets {
   agentApiKey: string;
   agentDid: string;
-  operatorAddress: string;
   baseUrl: string;
 }
 
@@ -36,7 +35,6 @@ export interface AuthCheckResult {
   authorized: boolean;
   reason: string;
   operatorAddress: string | null;
-  signedByExpectedOperator: boolean;
   isExpired: boolean;
   amountWithinLimit: boolean;
   chainsAllowed: boolean;

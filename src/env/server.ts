@@ -16,7 +16,6 @@ export const serverEnv = {
   geminiSafetyThreshold: process.env.GEMINI_SAFETY_THRESHOLD || "",
   t3nAgentApiKey: process.env.T3N_AGENT_API_KEY || "",
   t3nAgentDid: process.env.T3N_AGENT_DID || "",
-  t3nOperatorAddress: process.env.T3N_OPERATOR_ADDRESS || "",
   t3nBaseUrl: process.env.T3N_BASE_URL || "",
   t3nBridgeAuth: process.env.T3N_BRIDGE_AUTH || "",
 };

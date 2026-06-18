@@ -226,7 +226,6 @@ async function handleT3nStatusRequest(): Promise<string> {
     if (data.configured) {
       lines.push(
         `Agent DID: ${data.agentDid || "N/A"}`,
-        `Operator: ${data.operatorAddress || "N/A"}`,
         `Environment: ${data.environment || "N/A"}`,
         `Session: ${data.sessionId ? data.sessionId.slice(0, 16) + "..." : "none"}`,
         `Authorized: ${data.authorized ? "✅" : "❌"}`,
@@ -242,18 +241,18 @@ async function handleT3nStatusRequest(): Promise<string> {
           `Dest chains: ${a.allowedDestinationChains.join(", ")}`,
           `Issued: ${new Date(a.issuedAt).toLocaleDateString()}`,
           `Expires: ${new Date(a.expiresAt).toLocaleDateString()}`,
-          `Signed by: ${a.signerAddress.slice(0, 6)}...${a.signerAddress.slice(-4)}`,
+          `Signed by: ${a.signerAddress ? a.signerAddress.slice(0, 6) + "..." + a.signerAddress.slice(-4) : "N/A"}`,
         );
       } else {
         lines.push("", "No bridge authorization issued yet.");
-        lines.push('Use the operator console or POST /api/t3n/authorize to issue one.');
+        lines.push("Connect your wallet and sign one from the dashboard, or use the API.");
       }
     } else {
       lines.push(
         "",
         "To configure T3N:",
         "1. Sign up at https://terminal3.io/claim-page",
-        "2. Set T3N_AGENT_API_KEY, T3N_AGENT_DID, T3N_OPERATOR_ADDRESS in .env.local",
+        "2. Set T3N_AGENT_API_KEY and T3N_AGENT_DID in .env.local",
         "3. Restart the server",
       );
     }

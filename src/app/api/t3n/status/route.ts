@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getT3nStatus, isT3nConfigured } from "@/lib/t3n/index";
-import { isT3nAuthorized, readT3nSecrets, getStoredAuthorization } from "@/lib/t3n/authorization";
+import { isT3nAuthorized, readT3nSecrets, getStoredAuthorization, recoverSigner } from "@/lib/t3n/authorization";
 
 export async function GET() {
   try {
@@ -11,13 +11,18 @@ export async function GET() {
     const secrets = readT3nSecrets();
     const auth = getStoredAuthorization();
 
+    let signerAddress: string | null = null;
+    if (auth) {
+      const recovered = recoverSigner(auth);
+      signerAddress = recovered.address;
+    }
+
     return NextResponse.json({
       configured,
       connected: status.connected,
       sessionId: status.sessionId,
       environment: status.environment,
       agentDid: secrets?.agentDid ?? null,
-      operatorAddress: secrets?.operatorAddress ?? null,
       authorized,
       authorization: auth
         ? {
@@ -26,7 +31,7 @@ export async function GET() {
             maxAmountPerBridge: auth.authorization.maxAmountPerBridge,
             allowedSourceChains: auth.authorization.allowedSourceChains,
             allowedDestinationChains: auth.authorization.allowedDestinationChains,
-            signerAddress: auth.signerAddress,
+            signerAddress,
           }
         : null,
       timestamp: new Date().toISOString(),
