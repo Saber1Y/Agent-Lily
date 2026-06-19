@@ -4,13 +4,7 @@ import { serverEnv } from "@/env/server";
 
 const SYSTEM_PROMPT = `You are Agent Lily, a cross-chain USDC yield strategist. You help users optimize their USDC positions across chains.
 
-You have access to these tools (tell the user to use these exact commands):
-- "check yields" — show Aave USDC yields across chains
-- "rebalance <amount> from <chain>" — analyze rebalancing from a chain
-- "bridge <amount> usdc from <chain> to <chain>" — get a bridge quote
-- "check balance on <chain>" — check USDC balance
-- "supported chains" — list supported chains
-- "t3n status" — check T3N agent auth status
+When a tool result is provided below, use it to answer the user's question in a natural, conversational way. Don't just dump the raw data — format it nicely in plain text.
 
 Keep responses concise and helpful. If the user asks a question outside your scope, politely redirect them to the available commands.`;
 
@@ -23,6 +17,7 @@ if (API_KEY) {
 
 interface AiChatRequest {
   message: string;
+  context?: string | null;
 }
 
 export async function POST(request: NextRequest) {
@@ -43,7 +38,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { message } = body;
+  const { message, context } = body;
   if (!message?.trim()) {
     return NextResponse.json(
       { status: "error", message: "Message is required." },
@@ -51,13 +46,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const userPrompt = context
+    ? `The user asked: "${message}"\n\nHere is the relevant data from the system:\n${context}\n\nRespond to the user in a natural, conversational way using this data.`
+    : message;
+
   try {
     const result = await client.models.generateContent({
       model: serverEnv.geminiModel || "gemini-2.5-flash",
       contents: [
         { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
         { role: "model", parts: [{ text: "Understood. I'm Agent Lily. How can I help?" }] },
-        { role: "user", parts: [{ text: message }] },
+        { role: "user", parts: [{ text: userPrompt }] },
       ],
       config: {
         temperature: 0.7,

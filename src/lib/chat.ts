@@ -37,50 +37,31 @@ export async function getChatResponse(
   options: ChatResponseOptions = {},
 ): Promise<string> {
   const lowerInput = input.toLowerCase();
+  let toolResult: string | null = null;
 
   if (lowerInput.includes("chains") || lowerInput.includes("supported")) {
-    return getChainsInfo();
-  }
-
-  if (lowerInput.includes("balance")) {
-    return handleBalanceRequest(lowerInput, options.walletAddress, options.walletChainId);
-  }
-
-  if (lowerInput.includes("bridge") || lowerInput.includes("swap")) {
-    return handleBridgeRequest(lowerInput, options.walletAddress);
-  }
-
-  if (lowerInput.includes("rebalance")) {
-    return handleRebalanceRequest(lowerInput, options.walletAddress);
-  }
-
-  if (
+    toolResult = await getChainsInfo();
+  } else if (lowerInput.includes("balance")) {
+    toolResult = await handleBalanceRequest(lowerInput, options.walletAddress, options.walletChainId);
+  } else if (lowerInput.includes("bridge") || lowerInput.includes("swap")) {
+    toolResult = await handleBridgeRequest(lowerInput, options.walletAddress);
+  } else if (lowerInput.includes("rebalance")) {
+    toolResult = await handleRebalanceRequest(lowerInput, options.walletAddress);
+  } else if (
     lowerInput.includes("aave") ||
     lowerInput.includes("yield") ||
     lowerInput.includes("apy") ||
     lowerInput.includes("rates")
   ) {
-    return handleYieldRequest();
+    toolResult = await handleYieldRequest();
+  } else if (lowerInput.includes("t3n") || lowerInput.includes("terminal3") || lowerInput.includes("auth status")) {
+    toolResult = await handleT3nStatusRequest();
   }
 
-  if (lowerInput.includes("t3n") || lowerInput.includes("terminal3") || lowerInput.includes("auth status")) {
-    return handleT3nStatusRequest();
-  }
+  const aiResponse = await callGemini(input, toolResult);
+  if (aiResponse) return aiResponse;
 
-  try {
-    const res = await fetch("/api/chat/ai", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.response) return data.response;
-    }
-  } catch {
-  }
-
-  return [
+  return toolResult ?? [
     "Commands you can try:",
     `- "check yields"`,
     `- "rebalance from arbitrum"`,
@@ -89,6 +70,25 @@ export async function getChatResponse(
     `- "supported chains"`,
     `- "t3n status"`,
   ].join("\n");
+}
+
+async function callGemini(message: string, toolResult: string | null): Promise<string | null> {
+  try {
+    const res = await fetch("/api/chat/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        context: toolResult,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.response) return data.response;
+    }
+  } catch {
+  }
+  return null;
 }
 
 async function handleBalanceRequest(
