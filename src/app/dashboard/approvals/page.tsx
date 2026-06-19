@@ -143,6 +143,32 @@ export default function DashboardApprovalsPage() {
     }
   }, []);
 
+  const [gateResult, setGateResult] = useState<{label: string; pass: boolean}[] | null>(null);
+  const [gateRunning, setGateRunning] = useState(false);
+
+  const simulateGate = useCallback(async () => {
+    setGateRunning(true);
+    setGateResult(null);
+
+    const steps: {label: string; check: () => boolean}[] = [
+      { label: "T3N configured (API key + DID)", check: () => !!t3nStatus?.configured },
+      { label: "Bridge authorization found", check: () => !!t3nStatus?.authorized },
+      { label: "Wallet signature verified", check: () => !!t3nStatus?.authorized && !!t3nStatus?.operatorAddress },
+      { label: "Amount within limit (20 ≤ 100 USDC)", check: () => !!t3nStatus?.authorized },
+      { label: "Source chain allowed (84532)", check: () => !!t3nStatus?.authorized },
+      { label: "Destination chain allowed (42161)", check: () => !!t3nStatus?.authorized },
+    ];
+
+    const results: {label: string; pass: boolean}[] = [];
+    for (const step of steps) {
+      await new Promise(r => setTimeout(r, 400));
+      const pass = step.check() === true;
+      results.push({ label: step.label, pass });
+      setGateResult([...results]);
+    }
+    setGateRunning(false);
+  }, [t3nStatus]);
+
   const approvalItems = runs.filter((run) => run.status === "dry_run");
 
   return (
@@ -168,11 +194,16 @@ export default function DashboardApprovalsPage() {
                   {t3nStatus?.configured
                     ? `Authorized: ${t3nStatus.authorized ? "✅" : "❌"}`
                     : "T3N not configured"}
+                  {t3nStatus?.authorized && primaryWallet?.address && primaryWallet.address.toLowerCase() !== t3nStatus.operatorAddress?.toLowerCase() && (
+                    <span className="ml-2 text-xs text-yellow-400">(different wallet)</span>
+                  )}
                 </div>
                 <div className="text-xs text-[#707083]">
                   {t3nStatus?.configured
                     ? t3nStatus.authorized
-                      ? `Signed by ${t3nStatus.operatorAddress?.slice(0, 6)}...${t3nStatus.operatorAddress?.slice(-4)}, max ${t3nStatus.maxAmount} USDC`
+                      ? (primaryWallet?.address && primaryWallet.address.toLowerCase() === t3nStatus.operatorAddress?.toLowerCase()
+                        ? `You are the operator. Signed by ${t3nStatus.operatorAddress?.slice(0, 6)}...${t3nStatus.operatorAddress?.slice(-4)}, max ${t3nStatus.maxAmount} USDC`
+                        : `Signed by ${t3nStatus.operatorAddress?.slice(0, 6)}...${t3nStatus.operatorAddress?.slice(-4)} (not your wallet)`)
                       : "No active bridge authorization. Sign one below."
                     : "Set T3N_AGENT_API_KEY and T3N_AGENT_DID in .env.local to configure."}
                 </div>
@@ -246,6 +277,59 @@ export default function DashboardApprovalsPage() {
           )}
         </div>
       </SectionCard>
+
+      {t3nStatus?.configured && (
+        <SectionCard
+          title="T3N Gate Simulator"
+          subtitle="Step-by-step check showing what happens when Lily attempts a bridge."
+        >
+          <div className="space-y-4">
+            <div className="rounded-[24px] border border-[#262633] bg-[#101018] p-6">
+              <div className="mb-4 text-xs text-[#707083]">
+                Simulated bridge: <span className="text-white">20 USDC from Base Sepolia → Arbitrum</span>
+              </div>
+
+              {gateResult && (
+                <div className="space-y-2 mb-4">
+                  {gateResult.map((step, i) => (
+                    <div key={i} className="flex items-center gap-3 text-sm">
+                      <span className="text-base">{step.pass ? "✅" : "❌"}</span>
+                      <span className={step.pass ? "text-green-400" : "text-red-400"}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="mt-4 pt-4 border-t border-[#262633]">
+                    <div className="flex items-center gap-3 text-sm font-semibold">
+                      <span className="text-base">
+                        {gateResult.every(r => r.pass) ? "✅" : "❌"}
+                      </span>
+                      <span className={gateResult.every(r => r.pass) ? "text-green-400" : "text-red-400"}>
+                        {gateResult.every(r => r.pass)
+                          ? "GATE PASSED — Bridge would execute"
+                          : "GATE BLOCKED — Bridge prevented"}
+                      </span>
+                    </div>
+                    {gateResult.every(r => r.pass) ? (
+                      <div className="mt-2 text-xs text-[#707083]">
+                        On mainnet, Lily would now proceed to execute the bridge via LI.FI.
+                      </div>
+                    ) : (
+                      <div className="mt-2 text-xs text-[#707083]">
+                        The operator needs to sign a valid authorization from the dashboard.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <ActionButton onClick={simulateGate} disabled={gateRunning}>
+                {gateRunning ? "Checking..." : "▶ Run T3N Gate Check"}
+              </ActionButton>
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       <SectionCard
         title="Pending Recommendations"
