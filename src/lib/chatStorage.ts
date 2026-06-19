@@ -13,70 +13,36 @@ export interface Chat {
   timestamp: number;
 }
 
-function createWalletHeaders(walletAddress: string) {
-  return {
-    "x-wallet-address": walletAddress,
-  };
+function storageKey(walletAddress: string) {
+  return `lily_chats_${walletAddress.toLowerCase()}`;
 }
 
 export async function getStoredChats(walletAddress: string): Promise<Chat[]> {
-  const response = await fetch("/api/dashboard/chats", {
-    headers: createWalletHeaders(walletAddress),
-  });
-  const json = await response.json();
-
-  if (!response.ok) {
-    throw new Error(json.message || "Failed to load chats.");
+  try {
+    const raw = localStorage.getItem(storageKey(walletAddress));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
   }
-
-  return (json.chats ?? []).map(
-    (chat: {
-      id: string;
-      title: string;
-      messages: ChatMessage[];
-      updatedAt: string;
-    }) => ({
-      id: chat.id,
-      title: chat.title,
-      messages: chat.messages ?? [],
-      timestamp: new Date(chat.updatedAt).getTime(),
-    }),
-  );
 }
 
 export async function saveChat(walletAddress: string, chat: Chat): Promise<void> {
-  const response = await fetch("/api/dashboard/chats", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...createWalletHeaders(walletAddress),
-    },
-    body: JSON.stringify({
-      id: chat.id,
-      title: chat.title,
-      messages: chat.messages,
-    }),
-  });
-
-  if (!response.ok) {
-    const json = await response.json();
-    throw new Error(json.message || "Failed to save chat.");
+  const chats = await getStoredChats(walletAddress);
+  const idx = chats.findIndex((c) => c.id === chat.id);
+  if (idx >= 0) {
+    chats[idx] = chat;
+  } else {
+    chats.push(chat);
   }
+  localStorage.setItem(storageKey(walletAddress), JSON.stringify(chats));
 }
 
 export async function deleteChat(walletAddress: string, chatId: string): Promise<void> {
-  const response = await fetch(
-    `/api/dashboard/chats?chat_id=${encodeURIComponent(chatId)}`,
-    {
-      method: "DELETE",
-      headers: createWalletHeaders(walletAddress),
-    },
+  const chats = await getStoredChats(walletAddress);
+  localStorage.setItem(
+    storageKey(walletAddress),
+    JSON.stringify(chats.filter((c) => c.id !== chatId)),
   );
-
-  if (!response.ok) {
-    const json = await response.json();
-    throw new Error(json.message || "Failed to delete chat.");
-  }
 }
 
 export function generateChatTitle(firstMessage: string): string {
