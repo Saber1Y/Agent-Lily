@@ -39,21 +39,40 @@ export default function DashboardApprovalsPage() {
   const [authResult, setAuthResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const checkT3nStatus = useCallback(async () => {
+  const getLocalAuth = useCallback(() => {
+    if (typeof window === "undefined") return null;
     try {
-      const res = await fetch("/api/t3n/status");
+      const raw = localStorage.getItem("t3n_bridge_auth");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const checkT3nStatus = useCallback(async () => {
+    const localAuth = getLocalAuth();
+
+    try {
+      const addressParam = primaryWallet?.address ? `?wallet_address=${primaryWallet.address}` : "";
+      const res = await fetch(`/api/t3n/status${addressParam}`);
       const data = await res.json();
       setT3nStatus({
         configured: data.configured,
-        authorized: data.authorized,
-        operatorAddress: data.authorization?.signerAddress || null,
-        maxAmount: data.authorization?.maxAmountPerBridge || null,
-        expiresAt: data.authorization?.expiresAt || null,
+        authorized: data.authorized || !!localAuth,
+        operatorAddress: data.authorization?.signerAddress || localAuth?.signerAddress || null,
+        maxAmount: data.authorization?.maxAmountPerBridge || localAuth?.authorization?.maxAmountPerBridge || null,
+        expiresAt: data.authorization?.expiresAt || (localAuth?.authorization?.expiresAt ? new Date(localAuth.authorization.expiresAt * 1000).toISOString() : null),
       });
     } catch {
-      setT3nStatus(null);
+      setT3nStatus(localAuth ? {
+        configured: true,
+        authorized: true,
+        operatorAddress: localAuth.signerAddress,
+        maxAmount: localAuth.authorization.maxAmountPerBridge,
+        expiresAt: new Date(localAuth.authorization.expiresAt * 1000).toISOString(),
+      } : null);
     }
-  }, []);
+  }, [primaryWallet, getLocalAuth]);
 
   useEffect(() => {
     checkT3nStatus();
@@ -122,26 +141,22 @@ export default function DashboardApprovalsPage() {
       }
 
       setAuthResult(data.stored ? null : data.envVarValue);
-      await checkT3nStatus();
+      if (data.envVarValue) {
+        localStorage.setItem("t3n_bridge_auth", data.envVarValue);
+      }
+      setT3nStatus({
+        configured: true,
+        authorized: true,
+        operatorAddress: data.operatorAddress,
+        maxAmount: data.authorization?.maxAmountPerBridge || null,
+        expiresAt: data.authorization?.expiresAt || null,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to sign authorization.");
     } finally {
       setSigning(false);
     }
   }, [primaryWallet, checkT3nStatus]);
-
-  const copyToClipboard = useCallback(async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-    }
-  }, []);
 
   const [gateResult, setGateResult] = useState<{label: string; pass: boolean}[] | null>(null);
   const [gateRunning, setGateRunning] = useState(false);
@@ -238,27 +253,14 @@ export default function DashboardApprovalsPage() {
 
                 {(authResult || (t3nStatus?.authorized && error === null)) && (
                   <div className="rounded-xl bg-[#1a1a2e] border border-[#262633] p-4">
-                    <div className="mb-2 text-sm font-semibold text-[#fab6f5]">
+                    <div className="text-sm font-semibold text-[#fab6f5]">
                       Authorization Signed ✅
                     </div>
-                    <div className="mb-3 text-xs text-[#707083]">
+                    <div className="mt-1 text-xs text-[#707083]">
                       {authResult
-                        ? "Register your agent on the dashboard first. For now, add this to .env.local:"
-                        : "Bridge authorization saved to your agent config. No restart needed."}
+                        ? "Saved to browser. The T3N gate will use this authorization"
+                        : "Bridge authorization saved to your agent config."}
                     </div>
-                    {authResult && (
-                      <div className="relative">
-                        <pre className="max-h-40 overflow-auto rounded-xl bg-black/50 p-3 text-xs text-[#c0c0d0] break-all">
-                          {authResult}
-                        </pre>
-                        <button
-                          onClick={() => copyToClipboard(authResult)}
-                          className="mt-2 rounded-lg bg-[#262633] px-3 py-1.5 text-xs text-[#c0c0d0] hover:bg-[#323242]"
-                        >
-                          Copy
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
 

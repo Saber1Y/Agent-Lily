@@ -1,15 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 import { getT3nStatus, isT3nConfigured } from "@/lib/t3n/index";
 import { isT3nAuthorized, readT3nSecrets, getStoredAuthorization, recoverSigner } from "@/lib/t3n/authorization";
+import { getStoredAgentConfig } from "@/lib/persistence";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const configured = isT3nConfigured();
     const status = await getT3nStatus();
-    const authorized = isT3nAuthorized();
     const secrets = readT3nSecrets();
-    const auth = getStoredAuthorization();
+
+    const walletAddress = request.nextUrl.searchParams.get("wallet_address");
+    let auth;
+    if (walletAddress) {
+      const storedConfig = await getStoredAgentConfig(walletAddress);
+      auth = getStoredAuthorization(storedConfig?.t3nBridgeAuth);
+    } else {
+      auth = getStoredAuthorization();
+    }
+    const authorized = !!auth;
 
     let signerAddress: string | null = null;
     if (auth) {

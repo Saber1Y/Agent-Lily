@@ -97,23 +97,32 @@ export async function POST(request: NextRequest) {
   });
 
   const walletAddress = recovered.address.toLowerCase();
-  const existingConfig = await getStoredAgentConfig(walletAddress);
+  let existingConfig = await getStoredAgentConfig(walletAddress);
 
-  if (existingConfig) {
-    const updated = await saveAgentConfig({ ...existingConfig, t3nBridgeAuth: serialized });
-    if (!updated) {
-      console.warn("Signed T3N auth verified but failed to save to DB");
-    }
+  if (!existingConfig) {
+    existingConfig = {
+      id: walletAddress,
+      walletAddress,
+      currentChainId: 84532,
+      positionUsdc: "0",
+      autoRebalanceEnabled: false,
+      t3nBridgeAuth: null,
+    };
+  }
+
+  const updated = await saveAgentConfig({ ...existingConfig, t3nBridgeAuth: serialized });
+  if (!updated) {
+    console.warn("Signed T3N auth verified but failed to save to DB");
   }
 
   return NextResponse.json({
     status: "success",
-    message: existingConfig
+    message: updated
       ? "Bridge authorization verified and saved to your agent config."
-      : "Bridge authorization verified. Register your agent on the dashboard first to auto-save; for now set T3N_BRIDGE_AUTH in .env.local.",
+      : "Bridge authorization verified but failed to persist. Try again or set T3N_BRIDGE_AUTH in .env.local.",
     verified: true,
     operatorAddress: recovered.address,
-    stored: !!existingConfig,
+    stored: !!updated,
     authorization: {
       maxAmountPerBridge: signed.authorization.maxAmountPerBridge,
       allowedSourceChains: signed.authorization.allowedSourceChains,
