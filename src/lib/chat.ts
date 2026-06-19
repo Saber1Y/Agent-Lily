@@ -30,6 +30,7 @@ const DEFAULT_AMOUNT = "100";
 interface ChatResponseOptions {
   walletAddress?: string;
   walletChainId?: number;
+  history?: { role: string; content: string }[];
 }
 
 export async function getChatResponse(
@@ -58,7 +59,7 @@ export async function getChatResponse(
     toolResult = await handleT3nStatusRequest();
   }
 
-  const aiResponse = await callGemini(input, toolResult);
+  const aiResponse = await callGemini(input, toolResult, options.history);
   if (aiResponse) return aiResponse;
 
   return toolResult ?? [
@@ -72,14 +73,20 @@ export async function getChatResponse(
   ].join("\n");
 }
 
-async function callGemini(message: string, toolResult: string | null): Promise<string | null> {
+async function callGemini(
+  message: string,
+  toolResult: string | null,
+  history?: { role: string; content: string }[],
+): Promise<string | null> {
   try {
+    const recentHistory = history ? history.slice(-10) : undefined;
     const res = await fetch("/api/chat/ai", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         message,
         context: toolResult,
+        history: recentHistory,
       }),
     });
     if (res.ok) {

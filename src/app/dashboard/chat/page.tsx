@@ -217,7 +217,8 @@ function DashboardChatContent() {
           description: "Approve in wallet and track the result in this chat.",
         });
       } else {
-        response = await getChatResponse(commandValue, { walletAddress, walletChainId });
+        const recentHistory = messages.slice(-20).map(m => ({ role: m.role, content: m.content }));
+        response = await getChatResponse(commandValue, { walletAddress, walletChainId, history: recentHistory });
         actionCommand = getActionCommand(commandValue, response);
       }
     } catch (error) {

@@ -18,6 +18,7 @@ if (API_KEY) {
 interface AiChatRequest {
   message: string;
   context?: string | null;
+  history?: { role: string; content: string }[];
 }
 
 export async function POST(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { message, context } = body;
+  const { message, context, history } = body;
   if (!message?.trim()) {
     return NextResponse.json(
       { status: "error", message: "Message is required." },
@@ -50,12 +51,18 @@ export async function POST(request: NextRequest) {
     ? `The user asked: "${message}"\n\nHere is the relevant data from the system:\n${context}\n\nRespond to the user in a natural, conversational way using this data.`
     : message;
 
+  const conversationHistory = (history || []).map((msg) => ({
+    role: msg.role === "assistant" ? "model" as const : "user" as const,
+    parts: [{ text: msg.content }],
+  }));
+
   try {
     const result = await client.models.generateContent({
       model: serverEnv.geminiModel || "gemini-2.5-flash",
       contents: [
         { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
         { role: "model", parts: [{ text: "Understood. I'm Agent Lily. How can I help?" }] },
+        ...conversationHistory,
         { role: "user", parts: [{ text: userPrompt }] },
       ],
       config: {
