@@ -1,7 +1,7 @@
 # Agent Lily
 
 <p align="center">
-  <img src="https://jjlqjzsxzjmkdyofaprn.supabase.co/storage/v1/object/public/image/lily.png" alt="Agent Lily" width="220" />
+  <img src="/public/lily.png" alt="Agent Lily" width="220" />
 </p>
 
 <p align="center">
